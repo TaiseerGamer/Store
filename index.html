@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store Empire | Management Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">✦</span> STORE EMPIRE</div>
+    <div class="top-right">
+      <span id="activePlayer">No player selected</span>
+      <button class="admin-pill" onclick="showTab('admin')">⚙ Admin</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="side-label">MANAGEMENT</div>
+      <button class="nav active" data-tab="players" onclick="showTab('players')">♟ Players</button>
+      <button class="nav" data-tab="stores" onclick="showTab('stores')">▦ Stores</button>
+      <button class="nav" data-tab="customers" onclick="showTab('customers')">♧ Customers</button>
+      <div class="side-label">BUSINESS</div>
+      <button class="nav" data-tab="furniture" onclick="showTab('furniture')">▤ Furniture Shop</button>
+      <button class="nav" data-tab="restock" onclick="showTab('restock')">▣ Restocking</button>
+      <div class="side-label">SYSTEM</div>
+      <button class="nav" data-tab="admin" onclick="showTab('admin')">⚙ Admin Panel</button>
+      <div class="sidebar-bottom">
+        <div class="status-dot"></div>
+        Local save enabled
+        <small>Store Empire v1.0</small>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="page active" id="players">
+        <div class="heading">
+          <div><p class="eyebrow">WELCOME TO YOUR BUSINESS</p>
+            <h1>Players</h1>
+            <p class="muted">Create a player or select an existing profile.</p>
+          </div>
+        </div>
+        <div class="panel create-panel">
+          <h3>＋ Enter a player</h3>
+          <form id="playerForm" class="inline-form">
+            <input id="playerName" maxlength="30" placeholder="Type the player's name..." required>
+            <button class="primary">Create player</button>
+          </form>
+          <p class="hint">Each player receives their own money, inventory, and store.</p>
+        </div>
+        <div class="section-title"><h2>Player profiles</h2><span id="playerCount" class="count">0 players</span></div>
+        <div id="playerList" class="player-grid"></div>
+      </section>
+
+      <section class="page" id="stores">
+        <div class="heading">
+          <div><p class="eyebrow">BUSINESS OVERVIEW</p><h1>Player Stores</h1>
+            <p class="muted">Review every store and its daily performance.</p></div>
+        </div>
+        <div id="storeSummary" class="stats-grid"></div>
+        <div id="storeList" class="store-grid"></div>
+      </section>
+
+      <section class="page" id="customers">
+        <div class="heading">
+          <div><p class="eyebrow">CUSTOMER ACTIVITY</p><h1>Customers</h1>
+            <p class="muted">Track today's incoming customers and player service totals.</p></div>
+        </div>
+        <div class="panel">
+          <div class="section-title"><h2>Today's customer traffic</h2><span class="live-tag">● LIVE DATA</span></div>
+          <div class="big-number" id="customerTotal">0</div>
+          <p class="muted">Customers scheduled to visit all stores today</p>
+          <div class="progress-track"><div id="customerProgress" class="progress-fill"></div></div>
+          <p id="customerNote" class="hint"></p>
+        </div>
+        <div class="section-title"><h2>Customer statistics by player</h2></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Player</th><th>Customers served</th><th>Daily earnings</th><th>Rating</th></tr></thead>
+          <tbody id="customerTable"></tbody></table>
+        </div>
+      </section>
+
+      <section class="page" id="furniture">
+        <div class="heading">
+          <div><p class="eyebrow">DESIGN YOUR STORE</p><h1>Furniture & Decor</h1>
+            <p class="muted">Purchase items for your selected player's inventory.</p></div>
+          <div class="balance-card"><span>YOUR BALANCE</span><strong id="shopBalance">$0</strong></div>
+        </div>
+        <div class="shop-toolbar">
+          <input id="shopSearch" placeholder="Search furniture..." oninput="renderShop()">
+          <select id="shopCategory" onchange="renderShop()">
+            <option value="All">All categories</option>
+            <option>Furniture</option><option>Decor</option><option>Lighting</option>
+            <option>Equipment</option><option>Luxury</option>
+          </select>
+        </div>
+        <div id="shopNotice" class="notice">Select a player first to shop.</div>
+        <div id="shopGrid" class="shop-grid"></div>
+        <div class="section-title"><h2>Player inventory</h2></div>
+        <div id="inventoryList" class="inventory-list"></div>
+      </section>
+
+      <section class="page" id="restock">
+        <div class="heading">
+          <div><p class="eyebrow">SUPPLY MANAGEMENT</p><h1>Restocking</h1>
+            <p class="muted">Order supply boxes for your store.</p></div>
+          <div class="balance-card"><span>YOUR BALANCE</span><strong id="restockBalance">$0</strong></div>
+        </div>
+        <div class="panel">
+          <h2>📦 Place a restock order</h2>
+          <p class="muted">Choose how many boxes you need. Each box has a fixed price.</p>
+          <div class="restock-controls">
+            <label>Number of boxes
+              <input id="boxCount" type="number" min="1" max="1000" value="5" oninput="updateRestockCost()">
+            </label>
+            <div class="price-preview"><span>Total cost</span><strong id="restockCost">$250</strong><small>$50 per box</small></div>
+            <button class="primary" onclick="placeRestockOrder()">Place order</button>
+          </div>
+          <p class="hint">Orders are charged to the selected player when placed.</p>
+        </div>
+        <div class="section-title"><h2>Restock orders</h2></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Order</th><th>Player</th><th>Boxes</th><th>Cost</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="restockTable"></tbody>
+        </table></div>
+      </section>
+
+      <section class="page" id="admin">
+        <div class="heading">
+          <div><p class="eyebrow">OWNER ACCESS</p><h1>Admin Control Panel</h1>
+            <p class="muted">Manage player finances, stores, customers, purchases, and supplies.</p></div>
+          <span class="admin-pill">⚙ ADMIN MODE</span>
+        </div>
+        <div class="notice warning">Prototype notice: this panel has no password protection. It is intended for your local testing, not public multiplayer deployment.</div>
+
+        <div class="admin-grid">
+          <div class="panel">
+            <h3>💰 Manage player money</h3>
+            <label>Player<select id="moneyPlayer"></select></label>
+            <label>Amount ($)<input id="moneyAmount" type="number" min="1" value="1000"></label>
+            <div class="button-row">
+              <button class="primary" onclick="adjustMoney('give')">Give money</button>
+              <button class="danger" onclick="adjustMoney('take')">Take money</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>🛍 Buy items for a player</h3>
+            <label>Player<select id="purchasePlayer"></select></label>
+            <label>Item<select id="adminItem"></select></label>
+            <label>Quantity<input id="purchaseQty" type="number" min="1" max="1000" value="1"></label>
+            <button class="primary full" onclick="adminPurchase()">Purchase for player</button>
+            <p class="hint">The admin pays nothing; the selected player's inventory receives the items.</p>
+          </div>
+
+          <div class="panel">
+            <h3>📊 Edit store statistics</h3>
+            <label>Player<select id="statsPlayer"></select></label>
+            <label>Customers served today<input id="statsCustomers" type="number" min="0" value="0"></label>
+            <label>Money earned today ($)<input id="statsEarnings" type="number" min="0" value="0"></label>
+            <label>Rating (0–5)<input id="statsRating" type="number" min="0" max="5" step="0.1" value="5"></label>
+            <button class="primary full" onclick="updateStats()">Save store statistics</button>
+          </div>
+
+          <div class="panel">
+            <h3>👥 Customer controls</h3>
+            <label>Incoming customers today<input id="adminCustomers" type="number" min="0" value="100"></label>
+            <button class="primary full" onclick="updateCustomers()">Update customer count</button>
+            <p class="hint">This sets the shared daily traffic figure displayed on the Customers tab.</p>
+          </div>
+
+          <div class="panel">
+            <h3>📦 Restock management</h3>
+            <p class="muted">Approve a pending order to mark it fulfilled and add its boxes to the player's stock.</p>
+            <button class="secondary full" onclick="showTab('restock')">Open restock orders</button>
+          </div>
+
+          <div class="panel">
+            <h3>🧰 Save management</h3>
+            <p class="muted">Download a backup of all players, inventories, statistics, and orders.</p>
+            <button class="secondary full" onclick="exportData()">Export save file</button>
+            <label class="file-label">Import a save file<input id="importFile" type="file" accept=".json,application/json" onchange="importData(event)"></label>
+            <button class="danger full" onclick="resetGame()">Reset all game data</button>
+          </div>
+        </div>
+
+        <div class="section-title"><h2>All players — admin overview</h2></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Player</th><th>Balance</th><th>Inventory items</th><th>Boxes in stock</th><th>Actions</th></tr></thead>
+          <tbody id="adminTable"></tbody>
+        </table></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="script.js"></script>
+</body>
+</html>
