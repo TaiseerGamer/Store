@@ -1,201 +1,154 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Store Empire | Management Simulator</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Store Empire</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand"><span class="brand-icon">✦</span> STORE EMPIRE</div>
-    <div class="top-right">
-      <span id="activePlayer">No player selected</span>
-      <button class="admin-pill" onclick="showTab('admin')">⚙ Admin</button>
-    </div>
-  </header>
-
-  <div class="layout">
+  <div class="app-shell">
     <aside class="sidebar">
-      <div class="side-label">MANAGEMENT</div>
-      <button class="nav active" data-tab="players" onclick="showTab('players')">♟ Players</button>
-      <button class="nav" data-tab="stores" onclick="showTab('stores')">▦ Stores</button>
-      <button class="nav" data-tab="customers" onclick="showTab('customers')">♧ Customers</button>
-      <div class="side-label">BUSINESS</div>
-      <button class="nav" data-tab="furniture" onclick="showTab('furniture')">▤ Furniture Shop</button>
-      <button class="nav" data-tab="restock" onclick="showTab('restock')">▣ Restocking</button>
-      <div class="side-label">SYSTEM</div>
-      <button class="nav" data-tab="admin" onclick="showTab('admin')">⚙ Admin Panel</button>
+      <div class="brand">
+        <div class="brand-mark">SE</div>
+        <div><h1>Store Empire</h1><p>Build your business</p></div>
+      </div>
+      <div class="side-label">MAIN</div>
+      <button class="nav active" data-tab="overview"><span>▦</span> Overview</button>
+      <button class="nav" data-tab="players"><span>♙</span> Players</button>
+      <button class="nav" data-tab="stores"><span>⌂</span> Stores</button>
+      <button class="nav" data-tab="shop"><span>▤</span> Furniture Shop</button>
+      <button class="nav" data-tab="inventory"><span>▣</span> Inventory</button>
+      <button class="nav" data-tab="restock"><span>↻</span> Restocking</button>
+      <div class="side-label">EXTRAS</div>
+      <button class="nav" data-tab="quests"><span>◎</span> Daily Quests <span class="nav-dot" id="questNavDot"></span></button>
+      <button class="nav" data-tab="events"><span>✦</span> Events</button>
+      <button class="nav" data-tab="dashboard"><span>◫</span> View-Only Dashboard</button>
       <div class="sidebar-bottom">
-        <div class="status-dot"></div>
-        Local save enabled
-        <small>Store Empire v1.0</small>
+        <div class="mode-card"><span class="status-dot"></span><div><b id="modeLabel">Owner controls</b><small id="modeHint">Changes are enabled</small></div></div>
+        <button class="nav" data-tab="admin"><span>⚙</span> Admin Panel</button>
+        <button class="nav" id="viewModeButton"><span>◉</span> Toggle View-Only</button>
       </div>
     </aside>
 
     <main class="main">
-      <section class="page active" id="players">
-        <div class="heading">
-          <div><p class="eyebrow">WELCOME TO YOUR BUSINESS</p>
-            <h1>Players</h1>
-            <p class="muted">Create a player or select an existing profile.</p>
-          </div>
+      <header class="topbar">
+        <div><p class="eyebrow">STORE MANAGEMENT</p><h2 id="pageTitle">Overview</h2></div>
+        <div class="top-actions">
+          <label class="player-select-label" for="activePlayerSelect">Active player</label>
+          <select id="activePlayerSelect" aria-label="Active player"></select>
+          <div class="money-chip">💵 <span id="headerMoney">$0</span></div>
         </div>
-        <div class="panel create-panel">
-          <h3>＋ Enter a player</h3>
-          <form id="playerForm" class="inline-form">
-            <input id="playerName" maxlength="30" placeholder="Type the player's name..." required>
-            <button class="primary">Create player</button>
-          </form>
-          <p class="hint">Each player receives their own money, inventory, and store.</p>
-        </div>
-        <div class="section-title"><h2>Player profiles</h2><span id="playerCount" class="count">0 players</span></div>
-        <div id="playerList" class="player-grid"></div>
-      </section>
+      </header>
 
-      <section class="page" id="stores">
-        <div class="heading">
-          <div><p class="eyebrow">BUSINESS OVERVIEW</p><h1>Player Stores</h1>
-            <p class="muted">Review every store and its daily performance.</p></div>
+      <section class="tab-page active" id="tab-overview">
+        <div class="welcome-banner">
+          <div><p class="eyebrow">YOUR BUSINESS, YOUR EMPIRE</p><h3>Make every item count.</h3><p>Manage players, stock up, complete quests, and grow your stores.</p></div>
+          <div class="banner-emoji">🏬</div>
         </div>
-        <div id="storeSummary" class="stats-grid"></div>
-        <div id="storeList" class="store-grid"></div>
-      </section>
-
-      <section class="page" id="customers">
-        <div class="heading">
-          <div><p class="eyebrow">CUSTOMER ACTIVITY</p><h1>Customers</h1>
-            <p class="muted">Track today's incoming customers and player service totals.</p></div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-icon purple">♙</div><p>Total Players</p><strong id="statPlayers">0</strong><small>Registered in this save</small></article>
+          <article class="stat-card"><div class="stat-icon green">＄</div><p>Combined Cash</p><strong id="statMoney">$0</strong><small>Across all players</small></article>
+          <article class="stat-card"><div class="stat-icon orange">▣</div><p>Items Owned</p><strong id="statItems">0</strong><small>Across all inventories</small></article>
+          <article class="stat-card"><div class="stat-icon blue">✦</div><p>Active Events</p><strong id="statEvents">0</strong><small>Timed events running now</small></article>
         </div>
-        <div class="panel">
-          <div class="section-title"><h2>Today's customer traffic</h2><span class="live-tag">● LIVE DATA</span></div>
-          <div class="big-number" id="customerTotal">0</div>
-          <p class="muted">Customers scheduled to visit all stores today</p>
-          <div class="progress-track"><div id="customerProgress" class="progress-fill"></div></div>
-          <p id="customerNote" class="hint"></p>
-        </div>
-        <div class="section-title"><h2>Customer statistics by player</h2></div>
-        <div class="table-wrap">
-          <table><thead><tr><th>Player</th><th>Customers served</th><th>Daily earnings</th><th>Rating</th></tr></thead>
-          <tbody id="customerTable"></tbody></table>
-        </div>
-      </section>
-
-      <section class="page" id="furniture">
-        <div class="heading">
-          <div><p class="eyebrow">DESIGN YOUR STORE</p><h1>Furniture & Decor</h1>
-            <p class="muted">Purchase items for your selected player's inventory.</p></div>
-          <div class="balance-card"><span>YOUR BALANCE</span><strong id="shopBalance">$0</strong></div>
-        </div>
-        <div class="shop-toolbar">
-          <input id="shopSearch" placeholder="Search furniture..." oninput="renderShop()">
-          <select id="shopCategory" onchange="renderShop()">
-            <option value="All">All categories</option>
-            <option>Furniture</option><option>Decor</option><option>Lighting</option>
-            <option>Equipment</option><option>Luxury</option>
-          </select>
-        </div>
-        <div id="shopNotice" class="notice">Select a player first to shop.</div>
-        <div id="shopGrid" class="shop-grid"></div>
-        <div class="section-title"><h2>Player inventory</h2></div>
-        <div id="inventoryList" class="inventory-list"></div>
-      </section>
-
-      <section class="page" id="restock">
-        <div class="heading">
-          <div><p class="eyebrow">SUPPLY MANAGEMENT</p><h1>Restocking</h1>
-            <p class="muted">Order supply boxes for your store.</p></div>
-          <div class="balance-card"><span>YOUR BALANCE</span><strong id="restockBalance">$0</strong></div>
-        </div>
-        <div class="panel">
-          <h2>📦 Place a restock order</h2>
-          <p class="muted">Choose how many boxes you need. Each box has a fixed price.</p>
-          <div class="restock-controls">
-            <label>Number of boxes
-              <input id="boxCount" type="number" min="1" max="1000" value="5" oninput="updateRestockCost()">
-            </label>
-            <div class="price-preview"><span>Total cost</span><strong id="restockCost">$250</strong><small>$50 per box</small></div>
-            <button class="primary" onclick="placeRestockOrder()">Place order</button>
-          </div>
-          <p class="hint">Orders are charged to the selected player when placed.</p>
-        </div>
-        <div class="section-title"><h2>Restock orders</h2></div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Order</th><th>Player</th><th>Boxes</th><th>Cost</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody id="restockTable"></tbody>
-        </table></div>
-      </section>
-
-      <section class="page" id="admin">
-        <div class="heading">
-          <div><p class="eyebrow">OWNER ACCESS</p><h1>Admin Control Panel</h1>
-            <p class="muted">Manage player finances, stores, customers, purchases, and supplies.</p></div>
-          <span class="admin-pill">⚙ ADMIN MODE</span>
-        </div>
-        <div class="notice warning">Prototype notice: this panel has no password protection. It is intended for your local testing, not public multiplayer deployment.</div>
-
-        <div class="admin-grid">
-          <div class="panel">
-            <h3>💰 Manage player money</h3>
-            <label>Player<select id="moneyPlayer"></select></label>
-            <label>Amount ($)<input id="moneyAmount" type="number" min="1" value="1000"></label>
-            <div class="button-row">
-              <button class="primary" onclick="adjustMoney('give')">Give money</button>
-              <button class="danger" onclick="adjustMoney('take')">Take money</button>
+        <div class="content-grid">
+          <article class="panel"><div class="panel-heading"><div><h3>Quick Actions</h3><p>Jump into your next task.</p></div></div>
+            <div class="quick-actions">
+              <button class="quick-action" data-goto="shop"><span>🛋️</span><b>Browse furniture</b><small>Shop for new items</small></button>
+              <button class="quick-action" data-goto="inventory"><span>📦</span><b>Manage inventory</b><small>Sell items you own</small></button>
+              <button class="quick-action" data-goto="quests"><span>🎯</span><b>Daily quests</b><small>Earn bonus cash</small></button>
+              <button class="quick-action" data-goto="dashboard"><span>📊</span><b>View dashboard</b><small>Inspect your empire</small></button>
             </div>
-          </div>
-
-          <div class="panel">
-            <h3>🛍 Buy items for a player</h3>
-            <label>Player<select id="purchasePlayer"></select></label>
-            <label>Item<select id="adminItem"></select></label>
-            <label>Quantity<input id="purchaseQty" type="number" min="1" max="1000" value="1"></label>
-            <button class="primary full" onclick="adminPurchase()">Purchase for player</button>
-            <p class="hint">The admin pays nothing; the selected player's inventory receives the items.</p>
-          </div>
-
-          <div class="panel">
-            <h3>📊 Edit store statistics</h3>
-            <label>Player<select id="statsPlayer"></select></label>
-            <label>Customers served today<input id="statsCustomers" type="number" min="0" value="0"></label>
-            <label>Money earned today ($)<input id="statsEarnings" type="number" min="0" value="0"></label>
-            <label>Rating (0–5)<input id="statsRating" type="number" min="0" max="5" step="0.1" value="5"></label>
-            <button class="primary full" onclick="updateStats()">Save store statistics</button>
-          </div>
-
-          <div class="panel">
-            <h3>👥 Customer controls</h3>
-            <label>Incoming customers today<input id="adminCustomers" type="number" min="0" value="100"></label>
-            <button class="primary full" onclick="updateCustomers()">Update customer count</button>
-            <p class="hint">This sets the shared daily traffic figure displayed on the Customers tab.</p>
-          </div>
-
-          <div class="panel">
-            <h3>📦 Restock management</h3>
-            <p class="muted">Approve a pending order to mark it fulfilled and add its boxes to the player's stock.</p>
-            <button class="secondary full" onclick="showTab('restock')">Open restock orders</button>
-          </div>
-
-          <div class="panel">
-            <h3>🧰 Save management</h3>
-            <p class="muted">Download a backup of all players, inventories, statistics, and orders.</p>
-            <button class="secondary full" onclick="exportData()">Export save file</button>
-            <label class="file-label">Import a save file<input id="importFile" type="file" accept=".json,application/json" onchange="importData(event)"></label>
-            <button class="danger full" onclick="resetGame()">Reset all game data</button>
-          </div>
+          </article>
+          <article class="panel"><div class="panel-heading"><div><h3>Active Events</h3><p>Temporary effects in your game.</p></div><button class="text-button" data-goto="events">View all →</button></div><div id="overviewEvents" class="compact-list"></div></article>
         </div>
-
-        <div class="section-title"><h2>All players — admin overview</h2></div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Player</th><th>Balance</th><th>Inventory items</th><th>Boxes in stock</th><th>Actions</th></tr></thead>
-          <tbody id="adminTable"></tbody>
-        </table></div>
+        <article class="panel"><div class="panel-heading"><div><h3>Recent Activity</h3><p>Latest actions in this browser save.</p></div></div><div id="activityList" class="activity-list"></div></article>
       </section>
+
+      <section class="tab-page" id="tab-players">
+        <div class="section-intro"><div><h3>Players</h3><p>Create and manage the players in your local game save.</p></div><button class="primary" id="createPlayerButton">＋ Create Player</button></div>
+        <div class="panel"><div id="playersList" class="player-list"></div></div>
+        <div class="panel"><div class="panel-heading"><div><h3>Selected Player</h3><p>Details for the currently active player.</p></div></div><div id="selectedPlayerDetails"></div></div>
+      </section>
+
+      <section class="tab-page" id="tab-stores">
+        <div class="section-intro"><div><h3>Stores</h3><p>Review stores and statistics belonging to the active player.</p></div></div>
+        <div class="stats-grid compact-stats">
+          <article class="stat-card"><div class="stat-icon purple">⌂</div><p>Stores Owned</p><strong id="storeCount">0</strong></article>
+          <article class="stat-card"><div class="stat-icon green">☺</div><p>Customers Today</p><strong id="storeCustomers">0</strong></article>
+          <article class="stat-card"><div class="stat-icon orange">★</div><p>Reputation</p><strong id="storeReputation">0</strong></article>
+          <article class="stat-card"><div class="stat-icon blue">↗</div><p>Level</p><strong id="storeLevel">1</strong></article>
+        </div>
+        <div class="panel"><div class="panel-heading"><div><h3>Your Stores</h3><p>Stores are represented as a management list in this version.</p></div><button class="primary" id="addStoreButton">＋ Add Store</button></div><div id="storesList"></div></div>
+      </section>
+
+      <section class="tab-page" id="tab-shop">
+        <div class="section-intro"><div><h3>Furniture Shop</h3><p>Purchase items to add them to your active player's inventory.</p></div><div class="shop-tools"><input id="shopSearch" type="search" placeholder="Search items…"><select id="shopCategory"><option value="all">All categories</option></select></div></div>
+        <div id="shopEventNotice"></div><div id="shopGrid" class="product-grid"></div>
+      </section>
+
+      <section class="tab-page" id="tab-inventory">
+        <div class="section-intro"><div><h3>Inventory</h3><p>Items are collected here. Sell any item for 50% of its original price.</p></div><div class="inventory-total">Inventory value <strong id="inventoryValue">$0</strong></div></div>
+        <div class="panel"><div id="inventoryList"></div></div>
+      </section>
+
+      <section class="tab-page" id="tab-restock">
+        <div class="section-intro"><div><h3>Restocking</h3><p>Place bulk orders for items. Orders complete when you fulfill them.</p></div></div>
+        <div class="panel">
+          <form id="restockForm" class="form-grid">
+            <label>Item<select id="restockItem"></select></label>
+            <label>Quantity<input id="restockQuantity" type="number" min="1" max="100" value="5" required></label>
+            <div class="form-action"><button class="primary" type="submit">Place Order</button></div>
+          </form>
+        </div>
+        <div class="panel"><div class="panel-heading"><div><h3>Restock Orders</h3><p>Orders awaiting fulfillment or already completed.</p></div></div><div id="restockList"></div></div>
+      </section>
+
+      <section class="tab-page" id="tab-quests">
+        <div class="section-intro"><div><h3>Daily Quests</h3><p>Complete tasks with the active player to earn money. Quests refresh each local calendar day.</p></div><div class="date-chip" id="questDate"></div></div>
+        <div class="quest-summary"><div><span>Completed today</span><strong id="questsCompleted">0 / 3</strong></div><div><span>Rewards claimed</span><strong id="questsClaimed">$0</strong></div><div class="quest-summary-icon">🎯</div></div>
+        <div id="questsList" class="quest-grid"></div>
+        <p class="subtle-note">Quest progress is saved per player in this browser. The Double Coins event doubles quest rewards while active.</p>
+      </section>
+
+      <section class="tab-page" id="tab-events">
+        <div class="section-intro"><div><h3>Events</h3><p>See currently active events and their remaining time.</p></div></div>
+        <div id="eventsList" class="event-grid"></div>
+        <div class="panel"><div class="panel-heading"><div><h3>Event rules</h3><p>Events are started and ended from the Admin Panel.</p></div></div><ul class="rules-list"><li><b>Double Coins:</b> doubles money rewards from daily quests.</li><li><b>Furniture Discounts:</b> reduces furniture shop prices by 25% while active.</li><li><b>Customer Rush:</b> temporarily adds 50% to the active player's displayed daily customer count.</li></ul></div>
+      </section>
+
+      <section class="tab-page" id="tab-dashboard">
+        <div class="section-intro"><div><h3>View-Only Dashboard</h3><p>Inspect saved data without editing it from this screen.</p></div><span class="read-only-tag">👁 READ ONLY</span></div>
+        <div class="read-only-notice">This dashboard's controls are read-only. Toggle View-Only mode to disable editing across the interface. This is a convenience feature, not secure authentication.</div>
+        <div class="stats-grid">
+          <article class="stat-card"><p>Total Players</p><strong id="dashPlayers">0</strong></article>
+          <article class="stat-card"><p>Combined Cash</p><strong id="dashMoney">$0</strong></article>
+          <article class="stat-card"><p>Items Owned</p><strong id="dashItems">0</strong></article>
+          <article class="stat-card"><p>Restock Orders</p><strong id="dashOrders">0</strong></article>
+        </div>
+        <div class="content-grid">
+          <article class="panel"><div class="panel-heading"><div><h3>Player Overview</h3><p>Balances, stores, and inventory totals.</p></div></div><div id="dashboardPlayerTable"></div></article>
+          <article class="panel"><div class="panel-heading"><div><h3>Events</h3><p>Active and expired events.</p></div></div><div id="dashboardEvents"></div></article>
+        </div>
+        <div class="panel"><div class="panel-heading"><div><h3>Player Inventory Inspector</h3><p>Choose a player to inspect their items.</p></div></div><label class="inline-label">Player<select id="dashboardPlayerSelect"></select></label><div id="dashboardInventory"></div></div>
+      </section>
+
+      <section class="tab-page" id="tab-admin">
+        <div class="section-intro"><div><h3>Admin Panel</h3><p>Manage the local save. View-Only mode disables these actions in the interface.</p></div><span class="admin-tag">⚙ ADMIN</span></div>
+        <div class="content-grid">
+          <article class="panel"><div class="panel-heading"><div><h3>Adjust Player Money</h3><p>Add or remove cash from the active player.</p></div></div><form id="moneyForm" class="stack-form"><label>Amount<input id="moneyAmount" type="number" min="1" required placeholder="100"></label><label>Action<select id="moneyAction"><option value="add">Add money</option><option value="remove">Remove money</option></select></label><button class="primary" type="submit">Apply Change</button></form></article>
+          <article class="panel"><div class="panel-heading"><div><h3>Player Statistics</h3><p>Update the active player's management stats.</p></div></div><form id="statsForm" class="stack-form"><label>Customers today<input id="adminCustomers" type="number" min="0" required></label><label>Reputation (0–100)<input id="adminReputation" type="number" min="0" max="100" required></label><label>Level<input id="adminLevel" type="number" min="1" required></label><button class="primary" type="submit">Save Statistics</button></form></article>
+        </div>
+        <div class="panel"><div class="panel-heading"><div><h3>Event Management</h3><p>Start a timed event or end the current event early.</p></div></div><form id="eventForm" class="form-grid"><label>Event<select id="eventType"><option value="doubleCoins">💰 Double Coins</option><option value="furnitureDiscount">🛋️ Furniture Discounts</option><option value="customerRush">👥 Customer Rush</option></select></label><label>Duration<select id="eventDuration"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="360">6 hours</option><option value="1440">24 hours</option></select></label><div class="form-action"><button class="primary" type="submit">Start Event</button><button class="danger" type="button" id="endEventButton">End All Events</button></div></form><div id="adminEventStatus" class="inline-status"></div></div>
+        <div class="panel"><div class="panel-heading"><div><h3>Save Management</h3><p>Export or import your local game data, or reset this browser's save.</p></div></div><div class="button-row"><button class="secondary" id="exportButton">Export Save</button><label class="secondary file-button">Import Save<input type="file" id="importFile" accept="application/json"></label><button class="danger" id="resetButton">Reset Game</button></div><p class="subtle-note">Export a backup before importing or resetting. Imported files can overwrite your current save.</p></div>
+      </section>
+      <footer class="footer">Store Empire <span>•</span> Local browser save <span>•</span> GitHub Pages compatible</footer>
     </main>
   </div>
-
-  <div id="toast" class="toast" role="status"></div>
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+  <dialog id="playerDialog" class="modal"><form id="newPlayerForm" method="dialog"><div class="panel-heading"><div><h3>Create Player</h3><p>Start a new business profile.</p></div><button class="icon-button" type="button" id="closePlayerDialog" aria-label="Close">✕</button></div><label>Player name<input id="newPlayerName" maxlength="24" required placeholder="e.g. Alex"></label><label>Starting money<input id="startingMoney" type="number" min="0" max="100000000" value="1000" required></label><div class="modal-actions"><button type="button" class="secondary" id="cancelPlayerButton">Cancel</button><button class="primary" type="submit">Create Player</button></div></form></dialog>
   <script src="script.js"></script>
 </body>
 </html>

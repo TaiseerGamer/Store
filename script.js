@@ -1,581 +1,550 @@
+(() => {
+  "use strict";
 
-"use strict";
+  const SAVE_KEY = "storeEmpireSaveV2";
+  const OLD_SAVE_KEY = "storeEmpireSaveV1";
+  const $ = (id) => document.getElementById(id);
+  const money = (amount) => "$" + Math.floor(Number(amount) || 0).toLocaleString("en-US");
+  const now = () => Date.now();
+  let viewOnlyMode = false;
+  let state;
+  let toastTimer = null;
 
-const SAVE_KEY = "storeEmpireSaveV1";
-const BOX_PRICE = 50;
+  const CATALOG = [
+    {id:"chair",name:"Modern Chair",category:"Seating",price:120,emoji:"🪑",description:"A simple chair for a welcoming store."},
+    {id:"sofa",name:"Luxury Sofa",category:"Seating",price:480,emoji:"🛋️",description:"A comfortable centerpiece for any space."},
+    {id:"stool",name:"Wooden Stool",category:"Seating",price:65,emoji:"🪑",description:"Small, useful, and affordable."},
+    {id:"desk",name:"Office Desk",category:"Tables",price:260,emoji:"🪵",description:"A sturdy desk for your business."},
+    {id:"table",name:"Display Table",category:"Tables",price:350,emoji:"▤",description:"Show off your products in style."},
+    {id:"coffeeTable",name:"Coffee Table",category:"Tables",price:180,emoji:"🪵",description:"A low table with a clean design."},
+    {id:"shelf",name:"Wooden Shelf",category:"Storage",price:220,emoji:"🗄️",description:"Keep products organized and visible."},
+    {id:"cabinet",name:"Storage Cabinet",category:"Storage",price:390,emoji:"🗃️",description:"Extra storage for your growing empire."},
+    {id:"locker",name:"Staff Locker",category:"Storage",price:310,emoji:"🚪",description:"A practical storage locker."},
+    {id:"lamp",name:"Desk Lamp",category:"Lighting",price:90,emoji:"💡",description:"A little extra light for your store."},
+    {id:"floorLamp",name:"Floor Lamp",category:"Lighting",price:210,emoji:"🛋️",description:"Brighten up a corner."},
+    {id:"neon",name:"Neon Sign",category:"Decor",price:550,emoji:"🌈",description:"A bright sign to catch attention."},
+    {id:"plant",name:"Indoor Plant",category:"Decor",price:75,emoji:"🪴",description:"Add a touch of greenery."},
+    {id:"painting",name:"Wall Painting",category:"Decor",price:240,emoji:"🖼️",description:"Give your store some personality."},
+    {id:"clock",name:"Wall Clock",category:"Decor",price:110,emoji:"🕒",description:"A classic wall decoration."},
+    {id:"rug",name:"Patterned Rug",category:"Decor",price:190,emoji:"🟫",description:"Make the floor feel more inviting."},
+    {id:"computer",name:"Office Computer",category:"Electronics",price:720,emoji:"🖥️",description:"A useful workstation upgrade."},
+    {id:"tablet",name:"Sales Tablet",category:"Electronics",price:430,emoji:"📱",description:"A handy portable device."},
+    {id:"speaker",name:"Sound System",category:"Electronics",price:650,emoji:"🔊",description:"Fill your store with sound."},
+    {id:"camera",name:"Security Camera",category:"Electronics",price:380,emoji:"📹",description:"A visible security upgrade."},
+    {id:"register",name:"Cash Register",category:"Equipment",price:500,emoji:"🧾",description:"Essential equipment for sales."},
+    {id:"counter",name:"Checkout Counter",category:"Equipment",price:800,emoji:"🏪",description:"A professional checkout station."},
+    {id:"cart",name:"Shopping Cart",category:"Equipment",price:140,emoji:"🛒",description:"Help customers carry their shopping."},
+    {id:"basket",name:"Shopping Basket",category:"Equipment",price:45,emoji:"🧺",description:"A basic customer basket."},
+    {id:"fridge",name:"Display Fridge",category:"Appliances",price:1250,emoji:"🧊",description:"Keep display products cool."},
+    {id:"microwave",name:"Microwave",category:"Appliances",price:320,emoji:"♨️",description:"A compact staff-room appliance."},
+    {id:"vending",name:"Vending Machine",category:"Appliances",price:1450,emoji:"🥤",description:"A vending machine for your business."},
+    {id:"plantLarge",name:"Large Plant",category:"Decor",price:320,emoji:"🌳",description:"A larger decorative plant."},
+    {id:"goldChair",name:"Golden Chair",category:"Seating",price:2500,emoji:"👑",description:"A premium statement piece."},
+    {id:"crystalLamp",name:"Crystal Lamp",category:"Lighting",price:3200,emoji:"💎",description:"An expensive decorative light."},
+    {id:"marbleDesk",name:"Marble Desk",category:"Tables",price:4200,emoji:"🏛️",description:"A premium desk for a top-tier store."},
+    {id:"arcade",name:"Arcade Machine",category:"Entertainment",price:2100,emoji:"🕹️",description:"Give customers a fun extra."},
+    {id:"poolTable",name:"Pool Table",category:"Entertainment",price:3900,emoji:"🎱",description:"A premium entertainment item."},
+    {id:"aquarium",name:"Aquarium",category:"Decor",price:1800,emoji:"🐠",description:"A relaxing display for your store."},
+    {id:"trophy",name:"Gold Trophy",category:"Decor",price:5000,emoji:"🏆",description:"Show off your business achievements."},
+    {id:"robot",name:"Helper Robot",category:"Equipment",price:8500,emoji:"🤖",description:"A futuristic item for your empire."},
+    {id:"safe",name:"Security Safe",category:"Storage",price:1150,emoji:"🔐",description:"A secure storage upgrade."},
+    {id:"sofaDeluxe",name:"Deluxe Sofa",category:"Seating",price:2200,emoji:"🛋️",description:"Premium comfort with extra style."},
+    {id:"goldRegister",name:"Gold Register",category:"Equipment",price:6200,emoji:"💰",description:"A luxurious checkout register."},
+    {id:"fountain",name:"Mini Fountain",category:"Decor",price:7200,emoji:"⛲",description:"An eye-catching luxury decoration."}
+  ];
 
-const CATALOG = [
-  {id:"chair",name:"Wooden Chair",category:"Furniture",price:100,icon:"🪑",desc:"A classic chair for customers."},
-  {id:"table",name:"Dining Table",category:"Furniture",price:250,icon:"🪵",desc:"A table for your dining area."},
-  {id:"sofa",name:"Luxury Sofa",category:"Furniture",price:900,icon:"🛋️",desc:"A comfortable premium sofa."},
-  {id:"stool",name:"Bar Stool",category:"Furniture",price:150,icon:"🪑",desc:"Perfect for counters and bars."},
-  {id:"bench",name:"Garden Bench",category:"Furniture",price:400,icon:"🪑",desc:"A relaxing outdoor bench."},
-  {id:"booth",name:"Dining Booth",category:"Furniture",price:1200,icon:"🛋️",desc:"A cozy booth for groups."},
-  {id:"counter",name:"Service Counter",category:"Furniture",price:800,icon:"🧾",desc:"A professional service desk."},
-  {id:"shelf",name:"Display Shelf",category:"Furniture",price:350,icon:"🗄️",desc:"Show off your store products."},
-  {id:"cabinet",name:"Storage Cabinet",category:"Furniture",price:450,icon:"🗄️",desc:"Organize your supplies."},
-  {id:"desk",name:"Office Desk",category:"Furniture",price:500,icon:"🪑",desc:"A desk for your back office."},
-  {id:"plant",name:"Small Plant",category:"Decor",price:60,icon:"🪴",desc:"Add a little greenery."},
-  {id:"palm",name:"Palm Plant",category:"Decor",price:180,icon:"🌴",desc:"A tropical decoration."},
-  {id:"flower",name:"Flower Vase",category:"Decor",price:90,icon:"💐",desc:"A colorful table decoration."},
-  {id:"painting",name:"Wall Painting",category:"Decor",price:220,icon:"🖼️",desc:"Give your walls personality."},
-  {id:"clock",name:"Wall Clock",category:"Decor",price:130,icon:"🕒",desc:"A useful decorative clock."},
-  {id:"rug",name:"Luxury Rug",category:"Decor",price:550,icon:"🟫",desc:"Make your floor stand out."},
-  {id:"fountain",name:"Mini Fountain",category:"Decor",price:1500,icon:"⛲",desc:"A premium water feature."},
-  {id:"aquarium",name:"Aquarium",category:"Decor",price:1800,icon:"🐠",desc:"A beautiful fish display."},
-  {id:"statue",name:"Golden Statue",category:"Luxury",price:5000,icon:"🏆",desc:"A prestigious centerpiece."},
-  {id:"sculpture",name:"Modern Sculpture",category:"Luxury",price:3500,icon:"🗿",desc:"An artistic statement piece."},
-  {id:"chandelier",name:"Crystal Chandelier",category:"Lighting",price:2200,icon:"💎",desc:"An elegant ceiling light."},
-  {id:"pendant",name:"Pendant Light",category:"Lighting",price:300,icon:"💡",desc:"Warm light over your tables."},
-  {id:"lamp",name:"Table Lamp",category:"Lighting",price:140,icon:"🪔",desc:"A soft decorative light."},
-  {id:"neon",name:"Neon Sign",category:"Lighting",price:750,icon:"🌟",desc:"A glowing shop sign."},
-  {id:"spotlight",name:"Spotlight",category:"Lighting",price:420,icon:"🔦",desc:"Highlight a special area."},
-  {id:"register",name:"Cash Register",category:"Equipment",price:650,icon:"💵",desc:"Essential store equipment."},
-  {id:"fridge",name:"Commercial Fridge",category:"Equipment",price:1600,icon:"🧊",desc:"Keep products chilled."},
-  {id:"oven",name:"Professional Oven",category:"Equipment",price:2500,icon:"♨️",desc:"High-grade kitchen equipment."},
-  {id:"coffee",name:"Coffee Machine",category:"Equipment",price:1100,icon:"☕",desc:"Serve coffee to your guests."},
-  {id:"shelf2",name:"Premium Display Case",category:"Luxury",price:2800,icon:"🏛️",desc:"Showcase premium products."},
-  {id:"goldchair",name:"Gold-Trim Chair",category:"Luxury",price:2200,icon:"👑",desc:"A special luxury seat."},
-  {id:"marble",name:"Marble Table",category:"Luxury",price:3200,icon:"⬜",desc:"A polished marble centerpiece."},
-  {id:"speaker",name:"Music Speaker",category:"Equipment",price:700,icon:"🔊",desc:"Add music to your store."},
-  {id:"plantwall",name:"Green Wall",category:"Decor",price:1250,icon:"🌿",desc:"A full wall of greenery."},
-  {id:"lamp2",name:"Floor Lamp",category:"Lighting",price:390,icon:"💡",desc:"Stylish floor lighting."},
-  {id:"umbrella",name:"Patio Umbrella",category:"Furniture",price:480,icon:"⛱️",desc:"Shade your outdoor seating."},
-  {id:"sofa2",name:"Royal Sofa",category:"Luxury",price:4200,icon:"🛋️",desc:"An exclusive royal seat."},
-  {id:"mirror",name:"Decorative Mirror",category:"Decor",price:320,icon:"🪞",desc:"Make the room feel brighter."},
-  {id:"goldlamp",name:"Golden Floor Lamp",category:"Luxury",price:1700,icon:"🏮",desc:"An upscale light fixture."},
-  {id:"sign",name:"Store Sign",category:"Decor",price:275,icon:"🪧",desc:"Make your store recognizable."},
-  {id:"plant2",name:"Bonsai Tree",category:"Luxury",price:850,icon:"🌳",desc:"A carefully styled plant."}
-];
+  const EVENT_INFO = {
+    doubleCoins:{name:"Double Coins",emoji:"💰",description:"Daily quest rewards are doubled while this event is active."},
+    furnitureDiscount:{name:"Furniture Discounts",emoji:"🛋️",description:"Furniture shop prices are reduced by 25%."},
+    customerRush:{name:"Customer Rush",emoji:"👥",description:"The active player's displayed daily customer count gets a temporary 50% boost."}
+  };
 
-let state = loadState();
-let toastTimeout;
+  const QUEST_TEMPLATES = [
+    {id:"buy3",title:"Stock Up",description:"Purchase 3 items from the Furniture Shop.",emoji:"🛍️",target:3,reward:250,type:"buy"},
+    {id:"buy5",title:"Big Shopper",description:"Purchase 5 items from the Furniture Shop.",emoji:"🛒",target:5,reward:450,type:"buy"},
+    {id:"spend500",title:"Smart Investment",description:"Spend $500 in the Furniture Shop.",emoji:"💸",target:500,reward:300,type:"spend"},
+    {id:"sell2",title:"Clear Some Space",description:"Sell 2 items from your inventory.",emoji:"📦",target:2,reward:220,type:"sell"},
+    {id:"sell5",title:"Reseller",description:"Sell 5 items from your inventory.",emoji:"🔁",target:5,reward:500,type:"sell"},
+    {id:"restock1",title:"Keep Stock Moving",description:"Place 1 restock order.",emoji:"🚚",target:1,reward:200,type:"restock"},
+    {id:"restock3",title:"Bulk Buyer",description:"Place 3 restock orders.",emoji:"📋",target:3,reward:420,type:"restock"}
+  ];
 
-function defaultState() {
-  return {players:[], selectedId:null, customersToday:100, orders:[], nextOrderId:1};
-}
-
-function loadState() {
-  try {
-    const saved = localStorage.getItem(SAVE_KEY);
-    if (!saved) return defaultState();
-    const parsed = JSON.parse(saved);
-    if (!parsed || !Array.isArray(parsed.players) || !Array.isArray(parsed.orders)) {
-      return defaultState();
-    }
-    parsed.customersToday = Math.max(0, Number(parsed.customersToday) || 0);
-    parsed.nextOrderId = Math.max(1, Number(parsed.nextOrderId) || 1);
-    parsed.players.forEach(p => {
-      p.inventory ||= {};
-      p.money = Math.max(0, Number(p.money) || 0);
-      p.stockBoxes = Math.max(0, Number(p.stockBoxes) || 0);
-      p.customersServed = Math.max(0, Number(p.customersServed) || 0);
-      p.earningsToday = Math.max(0, Number(p.earningsToday) || 0);
-      p.rating = Math.min(5, Math.max(0, Number(p.rating ?? 5)));
-    });
-    if (!parsed.players.some(p => p.id === parsed.selectedId)) parsed.selectedId = null;
-    return parsed;
-  } catch {
-    return defaultState();
+  function localDateKey(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
   }
-}
-
-function saveState() {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-    return true;
-  } catch {
-    notify("Could not save. Browser storage may be full or disabled.");
+  function uid() { return "p_" + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4); }
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function itemById(id) { return CATALOG.find(item => item.id === id); }
+  function activePlayer() { return state.players.find(p => p.id === state.selectedId) || null; }
+  function totalInventory(player) { return Object.values(player?.inventory || {}).reduce((sum,qty) => sum + Math.max(0,Number(qty)||0),0); }
+  function totalItems() { return state.players.reduce((sum,p) => sum + totalInventory(p),0); }
+  function totalMoney() { return state.players.reduce((sum,p) => sum + (Number(p.money)||0),0); }
+  function isActiveEvent(type) { return state.events.some(e => e.type === type && e.endsAt > now()); }
+  function activeEvents() { return state.events.filter(e => e.endsAt > now()); }
+  function effectivePrice(item) { return Math.max(1, Math.floor(item.price * (isActiveEvent("furnitureDiscount") ? 0.75 : 1))); }
+  function eventCustomerCount(player) { return Math.floor((Number(player?.customersToday)||0) * (isActiveEvent("customerRush") ? 1.5 : 1)); }
+  function canEdit() {
+    if (!viewOnlyMode) return true;
+    toast("View-only mode is enabled. Toggle it off to make changes.", "error");
     return false;
   }
-}
-
-function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  })[c]);
-}
-
-function money(value) {
-  return "$" + (Number(value) || 0).toLocaleString("en-US", {
-    maximumFractionDigits:2
-  });
-}
-
-function getPlayer(id = state.selectedId) {
-  return state.players.find(p => p.id === id) || null;
-}
-
-function selectedRequired() {
-  const player = getPlayer();
-  if (!player) {
-    notify("Create or select a player first.");
-    showTab("players");
-    return null;
+  function logActivity(message) {
+    state.activity.unshift({id:uid(),message,at:now()});
+    state.activity = state.activity.slice(0,12);
   }
-  return player;
-}
-
-function notify(message) {
-  const el = document.getElementById("toast");
-  el.textContent = message;
-  el.classList.add("show");
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => el.classList.remove("show"), 2800);
-}
-
-function showTab(tab) {
-  document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === tab));
-  document.querySelectorAll(".nav").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-  if (tab === "furniture") renderShop();
-  if (tab === "restock") renderRestock();
-  if (tab === "admin") fillAdminForms();
-  window.scrollTo({top:0, behavior:"smooth"});
-}
-
-function createPlayer(name) {
-  const clean = name.trim().replace(/\s+/g, " ");
-  if (!clean) return notify("Enter a player name.");
-  if (state.players.some(p => p.name.toLowerCase() === clean.toLowerCase())) {
-    return notify("A player with that name already exists.");
-  }
-  const player = {
-    id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()),
-    name: clean, money:1000, inventory:{}, stockBoxes:0,
-    customersServed:0, earningsToday:0, rating:5
-  };
-  state.players.push(player);
-  state.selectedId = player.id;
-  saveState();
-  renderAll();
-  notify(clean + " has joined Store Empire!");
-}
-
-document.getElementById("playerForm").addEventListener("submit", event => {
-  event.preventDefault();
-  createPlayer(document.getElementById("playerName").value);
-  document.getElementById("playerName").value = "";
-});
-
-function selectPlayer(id) {
-  if (!state.players.some(p => p.id === id)) return;
-  state.selectedId = id;
-  saveState();
-  renderAll();
-  notify("Selected " + getPlayer().name + ".");
-}
-
-function removePlayer(id) {
-  const p = getPlayer(id);
-  if (!p) return;
-  if (!confirm("Delete " + p.name + "'s profile and inventory? This cannot be undone.")) return;
-  state.players = state.players.filter(x => x.id !== id);
-  if (state.selectedId === id) state.selectedId = state.players[0]?.id || null;
-  saveState();
-  renderAll();
-  notify("Player deleted.");
-}
-
-function renderPlayers() {
-  const host = document.getElementById("playerList");
-  document.getElementById("playerCount").textContent =
-    state.players.length + (state.players.length === 1 ? " player" : " players");
-
-  if (!state.players.length) {
-    host.innerHTML = '<div class="empty">No players yet. Enter a name above to get started.</div>';
-    return;
+  function toast(message, type = "success") {
+    const region = $("toastRegion");
+    const el = document.createElement("div");
+    el.className = `toast ${type}`;
+    el.textContent = message;
+    region.appendChild(el);
+    setTimeout(() => el.remove(), 3300);
   }
 
-  host.innerHTML = state.players.map(p => `
-    <div class="player-card ${p.id === state.selectedId ? "selected" : ""}">
-      <div class="player-top">
-        <div class="avatar">${escapeHTML(p.name.charAt(0).toUpperCase())}</div>
-        <div><div class="player-name">${escapeHTML(p.name)}</div>
-        <div class="player-meta">${p.id === state.selectedId ? "● Selected player" : "Store owner"}</div></div>
-      </div>
-      <div class="muted">Available balance</div>
-      <div class="card-money">${money(p.money)}</div>
-      <div class="player-meta">Inventory: ${inventoryCount(p)} items · Stock: ${p.stockBoxes} boxes</div>
-      <div class="card-actions" style="margin-top:15px">
-        <button class="${p.id === state.selectedId ? "secondary" : "primary"}" onclick="selectPlayer('${p.id}')">
-          ${p.id === state.selectedId ? "Selected ✓" : "Select"}
-        </button>
-        <button class="danger" onclick="removePlayer('${p.id}')">Delete</button>
-      </div>
-    </div>`).join("");
-}
-
-function inventoryCount(p) {
-  return Object.values(p.inventory || {}).reduce((sum, qty) => sum + Math.max(0, Number(qty) || 0), 0);
-}
-
-function renderStores() {
-  const totalServed = state.players.reduce((s,p) => s + p.customersServed, 0);
-  const totalEarned = state.players.reduce((s,p) => s + p.earningsToday, 0);
-  const avgRating = state.players.length
-    ? state.players.reduce((s,p) => s + p.rating, 0) / state.players.length : 0;
-
-  document.getElementById("storeSummary").innerHTML = `
-    <div class="stat-card"><span>Total players</span><strong>${state.players.length}</strong></div>
-    <div class="stat-card"><span>Today's total earnings</span><strong>${money(totalEarned)}</strong></div>
-    <div class="stat-card"><span>Average store rating</span><strong>${avgRating.toFixed(1)} ★</strong></div>`;
-
-  const host = document.getElementById("storeList");
-  if (!state.players.length) {
-    host.innerHTML = '<div class="empty">Create a player to open their store.</div>';
-    return;
+  function defaultState() {
+    return {players:[],selectedId:null,events:[],orders:[],nextOrderId:1,activity:[],version:2};
   }
-  host.innerHTML = state.players.map(p => `
-    <div class="store-card">
-      <div class="player-top"><div class="avatar">🏪</div><div>
-        <h3>${escapeHTML(p.name)}'s Store</h3>
-        <div class="player-meta">Owner balance: ${money(p.money)}</div>
-      </div></div>
-      <div class="store-rating">${"★".repeat(Math.floor(p.rating))}${"☆".repeat(5-Math.floor(p.rating))} ${p.rating.toFixed(1)} / 5</div>
-      <div class="store-mini-stats">
-        <div><span>Customers served today</span><strong>${p.customersServed.toLocaleString()}</strong></div>
-        <div><span>Money earned today</span><strong>${money(p.earningsToday)}</strong></div>
-      </div>
-      <button class="secondary full" style="margin-top:14px" onclick="selectPlayer('${p.id}');showTab('players')">Manage player</button>
-    </div>`).join("");
-}
-
-function renderCustomers() {
-  const total = state.customersToday;
-  document.getElementById("customerTotal").textContent = total.toLocaleString();
-  const served = state.players.reduce((s,p) => s + p.customersServed, 0);
-  document.getElementById("customerProgress").style.width =
-    (total ? Math.min(100, served / total * 100) : 0) + "%";
-  document.getElementById("customerNote").textContent =
-    `${served.toLocaleString()} customers served across all stores. The bar compares service totals with the daily traffic target.`;
-
-  document.getElementById("customerTable").innerHTML = state.players.length
-    ? state.players.map(p => `<tr>
-        <td>${escapeHTML(p.name)}</td>
-        <td>${p.customersServed.toLocaleString()}</td>
-        <td>${money(p.earningsToday)}</td>
-        <td>${p.rating.toFixed(1)} ★</td></tr>`).join("")
-    : '<tr><td colspan="4">No player data available.</td></tr>';
-}
-
-function renderShop() {
-  const p = getPlayer();
-  document.getElementById("shopBalance").textContent = money(p?.money || 0);
-  document.getElementById("shopNotice").textContent = p
-    ? "Shopping as " + p.name + ". Purchases are paid from this player's balance."
-    : "Select a player first to shop.";
-
-  const search = document.getElementById("shopSearch").value.trim().toLowerCase();
-  const category = document.getElementById("shopCategory").value;
-  const items = CATALOG.filter(item =>
-    (category === "All" || item.category === category) &&
-    (item.name.toLowerCase().includes(search) || item.desc.toLowerCase().includes(search))
-  );
-
-  document.getElementById("shopGrid").innerHTML = items.map(item => `
-    <div class="shop-card">
-      <div class="item-art">${item.icon}</div>
-      <div class="shop-card-content">
-        <div class="item-category">${item.category}</div>
-        <div class="item-title">${escapeHTML(item.name)}</div>
-        <div class="item-desc">${escapeHTML(item.desc)}</div>
-        <div class="item-buy"><strong>${money(item.price)}</strong>
-          <button class="primary" ${!p || p.money < item.price ? "disabled" : ""}
-            onclick="buyItem('${item.id}')">Buy</button>
-        </div>
-      </div>
-    </div>`).join("") || '<div class="empty">No matching products.</div>';
-
-  renderInventory();
-}
-
-function renderInventory() {
-  const p = getPlayer();
-  const host = document.getElementById("inventoryList");
-  if (!p) {
-    host.innerHTML = '<div class="empty">Select a player to see their inventory.</div>';
-    return;
+  function normalizePlayer(p) {
+    return {
+      id: String(p.id || uid()),
+      name: String(p.name || "Player").slice(0,24),
+      money: Math.max(0,Number(p.money)||0),
+      inventory: p.inventory && typeof p.inventory === "object" ? p.inventory : {},
+      stores: Array.isArray(p.stores) ? p.stores : [],
+      customersToday: Math.max(0,Number(p.customersToday)||0),
+      reputation: Math.max(0,Math.min(100,Number(p.reputation ?? 50)||0)),
+      level: Math.max(1,Number(p.level)||1),
+      stats: p.stats && typeof p.stats === "object" ? p.stats : {},
+      dailyQuests: p.dailyQuests && typeof p.dailyQuests === "object" ? p.dailyQuests : null
+    };
   }
-
-  const entries = Object.entries(p.inventory).filter(([,qty]) => qty > 0);
-  host.innerHTML = entries.length ? entries.map(([id, qty]) => {
-    const item = CATALOG.find(x => x.id === id);
-    if (!item) return "";
-    return `<div class="inventory-row"><span class="inv-icon">${item.icon}</span>
-      <div class="inv-name">${escapeHTML(item.name)}<small>${item.category}</small></div>
-      <strong>× ${qty}</strong></div>`;
-  }).join("") : '<div class="empty">Your inventory is empty. Buy some furniture above.</div>';
-}
-
-function addItem(p, itemId, qty) {
-  if (!CATALOG.some(x => x.id === itemId)) throw new Error("Unknown item.");
-  p.inventory[itemId] = Math.max(0, Number(p.inventory[itemId]) || 0) + qty;
-}
-
-function buyItem(itemId) {
-  const p = selectedRequired();
-  if (!p) return;
-  const item = CATALOG.find(x => x.id === itemId);
-  if (!item) return notify("Item not found.");
-  if (p.money < item.price) return notify("Not enough money!");
-  p.money -= item.price;
-  addItem(p, item.id, 1);
-  saveState();
-  renderAll();
-  notify("Purchased " + item.name + "!");
-}
-
-function updateRestockCost() {
-  const input = document.getElementById("boxCount");
-  const qty = Math.floor(Number(input.value) || 0);
-  document.getElementById("restockCost").textContent = money(Math.max(0, qty) * BOX_PRICE);
-}
-
-function placeRestockOrder() {
-  const p = selectedRequired();
-  if (!p) return;
-  const boxes = Math.floor(Number(document.getElementById("boxCount").value));
-  if (!Number.isSafeInteger(boxes) || boxes < 1 || boxes > 1000) {
-    return notify("Choose between 1 and 1,000 boxes.");
-  }
-  const cost = boxes * BOX_PRICE;
-  if (p.money < cost) return notify("Not enough money for this order.");
-
-  p.money -= cost;
-  state.orders.push({
-    id: state.nextOrderId++,
-    playerId: p.id,
-    boxes,
-    cost,
-    status:"Pending"
-  });
-  saveState();
-  renderAll();
-  notify("Restock order placed: " + boxes + " boxes.");
-}
-
-function renderRestock() {
-  const p = getPlayer();
-  document.getElementById("restockBalance").textContent = money(p?.money || 0);
-  document.getElementById("boxCount").max = "1000";
-  updateRestockCost();
-
-  document.getElementById("restockTable").innerHTML = state.orders.length
-    ? [...state.orders].reverse().map(o => {
-      const owner = getPlayer(o.playerId);
-      const status = o.status === "Fulfilled" ? "Fulfilled" : "Pending";
-      return `<tr><td>#${o.id}</td><td>${escapeHTML(owner?.name || "Deleted player")}</td>
-        <td>${o.boxes}</td><td>${money(o.cost)}</td><td>${status}</td>
-        <td>${status === "Pending" && owner
-          ? `<button class="primary" onclick="fulfillOrder(${o.id})">Fulfill</button>`
-          : status === "Pending" ? "Unavailable" : "Completed"}</td></tr>`;
-    }).join("")
-    : '<tr><td colspan="6">No restock orders yet.</td></tr>';
-}
-
-function fulfillOrder(orderId) {
-  const order = state.orders.find(o => o.id === orderId);
-  if (!order || order.status !== "Pending") return notify("Order is not pending.");
-  const p = getPlayer(order.playerId);
-  if (!p) return notify("The player no longer exists.");
-  p.stockBoxes += order.boxes;
-  order.status = "Fulfilled";
-  saveState();
-  renderAll();
-  notify("Order fulfilled. " + order.boxes + " boxes added to " + p.name + "'s stock.");
-}
-
-function fillSelect(id, selectedId) {
-  const select = document.getElementById(id);
-  const oldValue = selectedId || select.value;
-  select.innerHTML = state.players.map(p =>
-    `<option value="${p.id}">${escapeHTML(p.name)}</option>`).join("");
-  if (state.players.some(p => p.id === oldValue)) select.value = oldValue;
-  else if (state.selectedId) select.value = state.selectedId;
-  select.disabled = !state.players.length;
-}
-
-function fillAdminForms() {
-  ["moneyPlayer","purchasePlayer","statsPlayer"].forEach(id => fillSelect(id));
-  const itemSelect = document.getElementById("adminItem");
-  itemSelect.innerHTML = CATALOG.map(item =>
-    `<option value="${item.id}">${escapeHTML(item.name)} — ${money(item.price)}</option>`
-  ).join("");
-  document.getElementById("adminCustomers").value = state.customersToday;
-
-  const p = getPlayer(document.getElementById("statsPlayer").value);
-  if (p) {
-    document.getElementById("statsCustomers").value = p.customersServed;
-    document.getElementById("statsEarnings").value = p.earningsToday;
-    document.getElementById("statsRating").value = p.rating;
-  }
-  renderAdminTable();
-}
-
-document.getElementById("statsPlayer").addEventListener("change", () => {
-  const p = getPlayer(document.getElementById("statsPlayer").value);
-  if (!p) return;
-  document.getElementById("statsCustomers").value = p.customersServed;
-  document.getElementById("statsEarnings").value = p.earningsToday;
-  document.getElementById("statsRating").value = p.rating;
-});
-
-function adjustMoney(action) {
-  const p = getPlayer(document.getElementById("moneyPlayer").value);
-  const amount = Number(document.getElementById("moneyAmount").value);
-  if (!p) return notify("Create a player first.");
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 1_000_000_000) {
-    return notify("Enter a valid whole-dollar amount.");
-  }
-  if (action === "give") p.money += amount;
-  else {
-    if (p.money < amount) return notify("The player does not have enough money.");
-    p.money -= amount;
-  }
-  saveState();
-  renderAll();
-  notify((action === "give" ? "Gave " : "Took ") + money(amount) + (action === "give" ? " to " : " from ") + p.name + ".");
-}
-
-function adminPurchase() {
-  const p = getPlayer(document.getElementById("purchasePlayer").value);
-  const item = CATALOG.find(x => x.id === document.getElementById("adminItem").value);
-  const qty = Number(document.getElementById("purchaseQty").value);
-  if (!p || !item) return notify("Select a player and item.");
-  if (!Number.isSafeInteger(qty) || qty < 1 || qty > 1000) return notify("Quantity must be 1–1,000.");
-  addItem(p, item.id, qty);
-  saveState();
-  renderAll();
-  notify("Admin supplied " + qty + " × " + item.name + " to " + p.name + ".");
-}
-
-function updateStats() {
-  const p = getPlayer(document.getElementById("statsPlayer").value);
-  if (!p) return notify("Select a player.");
-  const customers = Number(document.getElementById("statsCustomers").value);
-  const earnings = Number(document.getElementById("statsEarnings").value);
-  const rating = Number(document.getElementById("statsRating").value);
-
-  if (!Number.isSafeInteger(customers) || customers < 0 ||
-      !Number.isFinite(earnings) || earnings < 0 || earnings > 1e12 ||
-      !Number.isFinite(rating) || rating < 0 || rating > 5) {
-    return notify("Enter valid statistics and a rating from 0 to 5.");
-  }
-  p.customersServed = customers;
-  p.earningsToday = earnings;
-  p.rating = rating;
-  saveState();
-  renderAll();
-  notify("Store statistics updated.");
-}
-
-function updateCustomers() {
-  const n = Number(document.getElementById("adminCustomers").value);
-  if (!Number.isSafeInteger(n) || n < 0 || n > 1_000_000_000) {
-    return notify("Enter a valid customer count.");
-  }
-  state.customersToday = n;
-  saveState();
-  renderAll();
-  notify("Daily customer count updated.");
-}
-
-function renderAdminTable() {
-  document.getElementById("adminTable").innerHTML = state.players.length
-    ? state.players.map(p => `<tr>
-      <td>${escapeHTML(p.name)}</td><td>${money(p.money)}</td>
-      <td>${inventoryCount(p)}</td><td>${p.stockBoxes}</td>
-      <td><button class="secondary" onclick="selectPlayer('${p.id}');showTab('players')">Manage</button></td>
-    </tr>`).join("")
-    : '<tr><td colspan="5">No players to manage.</td></tr>';
-}
-
-function renderHeader() {
-  const p = getPlayer();
-  document.getElementById("activePlayer").textContent = p ? "♟ " + p.name : "No player selected";
-}
-
-function renderAll() {
-  renderHeader();
-  renderPlayers();
-  renderStores();
-  renderCustomers();
-  renderShop();
-  renderRestock();
-  fillAdminForms();
-}
-
-function exportData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "store-empire-save.json";
-  a.click();
-  URL.revokeObjectURL(url);
-  notify("Save backup exported.");
-}
-
-function importData(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
+  function loadState() {
     try {
-      const incoming = JSON.parse(reader.result);
-      if (!incoming || !Array.isArray(incoming.players) || !Array.isArray(incoming.orders)) {
-        throw new Error("Invalid save structure");
+      let raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) raw = localStorage.getItem(OLD_SAVE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const base = defaultState();
+        state = {...base,...parsed};
+        state.players = (Array.isArray(parsed.players) ? parsed.players : []).map(normalizePlayer);
+        state.events = Array.isArray(parsed.events) ? parsed.events : [];
+        state.orders = Array.isArray(parsed.orders) ? parsed.orders : [];
+        state.activity = Array.isArray(parsed.activity) ? parsed.activity : [];
+        state.selectedId = state.players.some(p=>p.id===parsed.selectedId) ? parsed.selectedId : (state.players[0]?.id || null);
+        state.nextOrderId = Math.max(1,Number(parsed.nextOrderId)||1);
+      } else {
+        state = defaultState();
+        const starter = normalizePlayer({id:uid(),name:"My First Store",money:2500,stores:[{id:uid(),name:"Starter Store",createdAt:now()}],customersToday:100,reputation:50,level:1,inventory:{}});
+        state.players.push(starter);
+        state.selectedId = starter.id;
+        logActivity("Welcome to Store Empire! Your first player has been created.");
+        saveState();
       }
-      const ids = new Set();
-      for (const p of incoming.players) {
-        if (!p || typeof p.id !== "string" || typeof p.name !== "string" ||
-            !p.name.trim() || ids.has(p.id) || !p.inventory || typeof p.inventory !== "object" ||
-            !Number.isFinite(p.money) || p.money < 0 ||
-            !Number.isFinite(p.rating) || p.rating < 0 || p.rating > 5 ||
-            !Number.isSafeInteger(p.customersServed) || p.customersServed < 0 ||
-            !Number.isFinite(p.earningsToday) || p.earningsToday < 0 ||
-            !Number.isSafeInteger(p.stockBoxes) || p.stockBoxes < 0) {
-          throw new Error("Invalid player data");
-        }
-        ids.add(p.id);
-        for (const [itemId, qty] of Object.entries(p.inventory)) {
-          if (!CATALOG.some(item => item.id === itemId) ||
-              !Number.isSafeInteger(qty) || qty < 0) throw new Error("Invalid inventory");
-        }
-      }
-      for (const o of incoming.orders) {
-        if (!o || !Number.isSafeInteger(o.id) || !Number.isSafeInteger(o.boxes) ||
-            o.boxes < 1 || o.boxes > 1000 ||
-            !Number.isFinite(o.cost) || o.cost !== o.boxes * BOX_PRICE ||
-            !["Pending","Fulfilled"].includes(o.status) ||
-            !ids.has(o.playerId)) throw new Error("Invalid order data");
-      }
-      if (!Number.isSafeInteger(incoming.customersToday) || incoming.customersToday < 0 ||
-          !Number.isSafeInteger(incoming.nextOrderId) || incoming.nextOrderId < 1) {
-        throw new Error("Invalid game settings");
-      }
-      if (incoming.selectedId !== null && !ids.has(incoming.selectedId)) {
-        throw new Error("Invalid selected player");
-      }
-      state = incoming;
-      saveState();
-      renderAll();
-      notify("Save imported successfully.");
-    } catch {
-      notify("Import failed: invalid or incompatible save file.");
+    } catch (error) {
+      console.error("Could not load Store Empire save:",error);
+      state = defaultState();
+      const starter = normalizePlayer({id:uid(),name:"My First Store",money:2500,stores:[{id:uid(),name:"Starter Store",createdAt:now()}],customersToday:100,reputation:50,level:1,inventory:{}});
+      state.players.push(starter); state.selectedId = starter.id;
+      toast("Your save could not be read, so a fresh save was started.", "error");
     }
-    event.target.value = "";
-  };
-  reader.readAsText(file);
-}
+    expireEvents();
+    state.players.forEach(ensureDailyQuests);
+  }
+  function saveState() {
+    try { localStorage.setItem(SAVE_KEY,JSON.stringify(state)); }
+    catch (error) { console.error("Could not save Store Empire:",error); toast("Save failed. Your browser may be out of storage.", "error"); }
+  }
 
-function resetGame() {
-  if (!confirm("Delete ALL players, inventories, money, and orders from this browser? Export a backup first if needed.")) return;
-  state = defaultState();
-  saveState();
+  function expireEvents() {
+    const before = state.events.length;
+    state.events = state.events.filter(e => Number(e.endsAt) > now());
+    if (state.events.length !== before) {
+      logActivity("One or more timed events expired.");
+      saveState();
+    }
+  }
+
+  function shuffled(items) {
+    const arr = items.slice();
+    for (let i=arr.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+    return arr;
+  }
+  function ensureDailyQuests(player) {
+    const today = localDateKey();
+    if (player.dailyQuests?.date === today && Array.isArray(player.dailyQuests.quests)) return;
+    const picks = shuffled(QUEST_TEMPLATES).slice(0,3);
+    player.dailyQuests = {date:today,claimedRewards:0,quests:picks.map(q=>({...q,progress:0,claimed:false}))};
+  }
+  function updateQuestProgress(player, type, amount) {
+    if (!player) return;
+    ensureDailyQuests(player);
+    player.dailyQuests.quests.forEach(q => {
+      if (q.type === type && !q.claimed) q.progress = Math.min(q.target, (Number(q.progress)||0) + amount);
+    });
+  }
+
+  function showTab(tab) {
+    const valid = ["overview","players","stores","shop","inventory","restock","quests","events","dashboard","admin"];
+    if (!valid.includes(tab)) tab = "overview";
+    document.querySelectorAll(".tab-page").forEach(el => el.classList.toggle("active",el.id === `tab-${tab}`));
+    document.querySelectorAll(".nav[data-tab]").forEach(el => el.classList.toggle("active",el.dataset.tab === tab));
+    const names = {overview:"Overview",players:"Players",stores:"Stores",shop:"Furniture Shop",inventory:"Inventory",restock:"Restocking",quests:"Daily Quests",events:"Events",dashboard:"View-Only Dashboard",admin:"Admin Panel"};
+    $("pageTitle").textContent = names[tab];
+    if (tab === "dashboard") renderDashboard();
+    if (tab === "admin") renderAdminForms();
+    if (tab === "quests") renderQuests();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  function createPlayer(name, startingMoney) {
+    if (!canEdit()) return;
+    name = String(name || "").trim().slice(0,24);
+    if (!name) return toast("Enter a player name.", "error");
+    const player = normalizePlayer({id:uid(),name,money:Math.max(0,Number(startingMoney)||0),stores:[],inventory:{},customersToday:0,reputation:50,level:1});
+    ensureDailyQuests(player);
+    state.players.push(player); state.selectedId = player.id;
+    logActivity(`Created player ${player.name}.`); saveState(); renderAll(); showTab("players"); toast(`Player "${player.name}" created.`);
+  }
+  function selectPlayer(id) {
+    if (!state.players.some(p=>p.id===id)) return;
+    state.selectedId = id; saveState(); renderAll();
+  }
+  function removePlayer(id) {
+    if (!canEdit()) return;
+    const p = state.players.find(x=>x.id===id);
+    if (!p) return;
+    if (!confirm(`Delete player "${p.name}" and their inventory? This cannot be undone.`)) return;
+    state.players = state.players.filter(x=>x.id!==id);
+    if (state.selectedId===id) state.selectedId = state.players[0]?.id || null;
+    logActivity(`Deleted player ${p.name}.`); saveState(); renderAll(); toast("Player deleted.");
+  }
+  function addStore() {
+    if (!canEdit()) return;
+    const p = activePlayer(); if (!p) return toast("Create a player first.","error");
+    const name = prompt("Name your new store:",`Store ${p.stores.length+1}`);
+    if (name === null) return;
+    if (!name.trim()) return toast("Store name cannot be empty.","error");
+    p.stores.push({id:uid(),name:name.trim().slice(0,40),createdAt:now()});
+    logActivity(`${p.name} added store "${name.trim()}".`); saveState(); renderAll(); toast("Store added.");
+  }
+
+  function renderHeader() {
+    const select = $("activePlayerSelect");
+    const current = state.selectedId;
+    select.innerHTML = state.players.length ? state.players.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join("") : `<option value="">No players</option>`;
+    select.value = current || "";
+    select.disabled = viewOnlyMode || !state.players.length;
+    $("headerMoney").textContent = money(activePlayer()?.money||0);
+    $("modeLabel").textContent = viewOnlyMode ? "View-only mode" : "Owner controls";
+    $("modeHint").textContent = viewOnlyMode ? "Editing is disabled" : "Changes are enabled";
+    document.body.classList.toggle("mode-readonly",viewOnlyMode);
+    $("viewModeButton").innerHTML = viewOnlyMode ? "<span>◉</span> Turn Off View-Only" : "<span>◉</span> Toggle View-Only";
+    $("questNavDot").style.display = state.players.some(p=>p.dailyQuests?.quests?.some(q=>q.progress>=q.target&&!q.claimed)) ? "block" : "none";
+    document.querySelectorAll("button.primary,button.danger,.file-button").forEach(el=>{
+      if (el.id === "viewModeButton") return;
+      if (viewOnlyMode && !el.closest("#tab-dashboard") && !el.closest("#tab-events")) el.setAttribute("data-view-disabled","true");
+      else el.removeAttribute("data-view-disabled");
+    });
+    document.querySelectorAll("[data-view-disabled='true']").forEach(el=>{ if ("disabled" in el) el.disabled=true; });
+    if (!viewOnlyMode) document.querySelectorAll("button:disabled[data-view-disabled]").forEach(el=>{el.disabled=false;el.removeAttribute("data-view-disabled");});
+  }
+  function renderOverview() {
+    $("statPlayers").textContent = state.players.length;
+    $("statMoney").textContent = money(totalMoney());
+    $("statItems").textContent = totalItems();
+    $("statEvents").textContent = activeEvents().length;
+    $("overviewEvents").innerHTML = activeEvents().length ? activeEvents().map(e=>`<div class="compact-row"><div class="compact-icon">${EVENT_INFO[e.type]?.emoji||"✦"}</div><div><b>${escapeHtml(EVENT_INFO[e.type]?.name||e.type)}</b><small>${timeLeft(e.endsAt)} remaining</small></div></div>`).join("") : `<div class="empty-state">No active events right now.</div>`;
+    $("activityList").innerHTML = state.activity.length ? state.activity.slice(0,6).map(a=>`<div class="activity-row"><div class="compact-icon">↗</div><div><b>${escapeHtml(a.message)}</b><small>${new Date(a.at).toLocaleString()}</small></div></div>`).join("") : `<div class="empty-state">Your recent actions will appear here.</div>`;
+  }
+    function renderPlayers() {
+    $("playersList").innerHTML = state.players.length ? state.players.map(p=>`<div class="player-card"><div class="player-avatar">${escapeHtml(p.name.slice(0,1).toUpperCase())}</div><div class="player-card-main"><b>${escapeHtml(p.name)} ${p.id===state.selectedId?'<span class="qty-badge">ACTIVE</span>':""}</b><small>${money(p.money)} · ${p.stores.length} stores · ${totalInventory(p)} items</small></div><div class="player-card-actions"><button class="small-button" data-select-player="${escapeHtml(p.id)}">Select</button><button class="small-button danger-small" data-delete-player="${escapeHtml(p.id)}" title="Delete player">✕</button></div></div>`).join("") : `<div class="empty-state"><div class="empty-icon">♙</div>No players yet. Create a player to begin.</div>`;
+    const p = activePlayer();
+    $("selectedPlayerDetails").innerHTML = p ? `<div class="detail-grid"><div class="detail-tile"><span>Balance</span><b>${money(p.money)}</b></div><div class="detail-tile"><span>Stores</span><b>${p.stores.length}</b></div><div class="detail-tile"><span>Items</span><b>${totalInventory(p)}</b></div><div class="detail-tile"><span>Customers today</span><b>${eventCustomerCount(p).toLocaleString()}</b></div><div class="detail-tile"><span>Reputation</span><b>${p.reputation}/100</b></div><div class="detail-tile"><span>Level</span><b>${p.level}</b></div></div>` : `<div class="empty-state">Select or create a player to see details.</div>`;
+  }
+  function renderStores() {
+    const p = activePlayer();
+    $("storeCount").textContent = p?.stores.length||0;
+    $("storeCustomers").textContent = p ? eventCustomerCount(p).toLocaleString() : "0";
+    $("storeReputation").textContent = p?.reputation??0;
+    $("storeLevel").textContent = p?.level||1;
+    $("storesList").innerHTML = p?.stores.length ? `<div class="table-wrap"><table><thead><tr><th>Store</th><th>Opened</th><th>Status</th></tr></thead><tbody>${p.stores.map(s=>`<tr><td><div class="item-name"><span class="item-emoji">🏬</span><b>${escapeHtml(s.name)}</b></div></td><td>${new Date(s.createdAt||now()).toLocaleDateString()}</td><td><span class="status-badge">Open</span></td></tr>`).join("")}</tbody></table></div>` : `<div class="empty-state">No stores yet. Use “Add Store” to create one for this player.</div>`;
+  }
+  function renderShop() {
+    const category = $("shopCategory").value || "all";
+    const query = $("shopSearch").value.trim().toLowerCase();
+    const items = CATALOG.filter(item=>(category==="all"||item.category===category)&&(`${item.name} ${item.category} ${item.description}`.toLowerCase().includes(query)));
+    $("shopEventNotice").innerHTML = isActiveEvent("furnitureDiscount") ? `<div class="event-banner shop-notice">🛋️ Furniture Discounts active! All furniture prices are 25% off.</div>` : "";
+    $("shopGrid").innerHTML = items.map(item=>{
+      const price = effectivePrice(item);
+      const discount = price < item.price;
+      return `<article class="product-card"><div class="product-art"><span class="category-pill">${escapeHtml(item.category)}</span>${item.emoji}</div><div class="product-info"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.description)}</p><div class="product-bottom"><div class="product-price">${money(price)}${discount?`<span class="old-price">${money(item.price)}</span>`:""}</div><button class="primary" data-buy-item="${item.id}" ${!activePlayer()||viewOnlyMode||activePlayer().money<price?"disabled":""}>Buy</button></div></div></article>`;
+    }).join("") || `<div class="empty-state">No items match your search.</div>`;
+  }
+  function renderInventory() {
+    const p = activePlayer();
+    const rows = p ? CATALOG.filter(item=>(Number(p.inventory[item.id])||0)>0) : [];
+    $("inventoryValue").textContent = money(rows.reduce((sum,item)=>sum+item.price*(Number(p.inventory[item.id])||0),0));
+    $("inventoryList").innerHTML = rows.length ? `<div class="table-wrap"><table><thead><tr><th>Item</th><th>Quantity</th><th>Original price</th><th>Sell price</th><th>Action</th></tr></thead><tbody>${rows.map(item=>{const qty=Number(p.inventory[item.id])||0;const sell=Math.floor(item.price*.5);return `<tr><td><div class="item-name"><span class="item-emoji">${item.emoji}</span><div><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.category)}</small></div></div></td><td><span class="qty-badge">×${qty}</span></td><td>${money(item.price)}</td><td class="green-text">${money(sell)}</td><td><button class="small-button" data-sell-item="${item.id}" ${viewOnlyMode?"disabled":""}>Sell 1</button> <button class="small-button" data-sell-all="${item.id}" ${viewOnlyMode?"disabled":""}>Sell all</button></td></tr>`;}).join("")}</tbody></table></div>` : `<div class="empty-state"><div class="empty-icon">📦</div>Your inventory is empty.<br>Visit the Furniture Shop to buy your first item.</div>`;
+  }
+  function buyItem(id) {
+    if (!canEdit()) return;
+    const p = activePlayer(), item = itemById(id);
+    if (!p||!item) return;
+    const price = effectivePrice(item);
+    if (p.money < price) return toast("Not enough money to buy this item.","error");
+    p.money -= price; p.inventory[id] = (Number(p.inventory[id])||0)+1;
+    updateQuestProgress(p,"buy",1); updateQuestProgress(p,"spend",price);
+    logActivity(`${p.name} bought ${item.name} for ${money(price)}.`);
+    saveState(); renderAll(); toast(`${item.name} added to inventory.`);
+  }
+  function sellItem(id, all = false) {
+    if (!canEdit()) return;
+    const p = activePlayer(), item = itemById(id);
+    if (!p||!item) return;
+    const qty = Number(p.inventory[id])||0;
+    if (qty < 1) return toast("You don't own this item.","error");
+    const count = all ? qty : 1;
+    const payout = Math.floor(item.price*.5)*count;
+    p.inventory[id] = qty-count;
+    if (p.inventory[id] <= 0) delete p.inventory[id];
+    p.money += payout; updateQuestProgress(p,"sell",count);
+    logActivity(`${p.name} sold ${count} × ${item.name} for ${money(payout)}.`);
+    saveState(); renderAll(); toast(`Sold ${count} item${count>1?"s":""} for ${money(payout)}.`);
+  }
+
+  function renderRestock() {
+    const select = $("restockItem");
+    select.innerHTML = CATALOG.map(item=>`<option value="${item.id}">${item.emoji} ${escapeHtml(item.name)} — ${money(item.price)} each</option>`).join("");
+    $("restockList").innerHTML = state.orders.length ? `<div class="table-wrap"><table><thead><tr><th>Order</th><th>Player</th><th>Item</th><th>Quantity</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody>${state.orders.slice().reverse().map(o=>{const item=itemById(o.itemId);return `<tr><td>#${o.id}</td><td>${escapeHtml(state.players.find(p=>p.id===o.playerId)?.name||"Deleted player")}</td><td>${item?item.emoji+" "+escapeHtml(item.name):"Unknown item"}</td><td>${o.quantity}</td><td>${money(o.total)}</td><td><span class="status-badge ${o.status==="Pending"?"pending":""}">${escapeHtml(o.status)}</span></td><td>${o.status==="Pending"?`<button class="small-button" data-fulfill-order="${o.id}" ${viewOnlyMode?"disabled":""}>Fulfill</button>`:"—"}</td></tr>`;}).join("")}</tbody></table></div>` : `<div class="empty-state">No restock orders yet.</div>`;
+  }
+  function placeRestockOrder(itemId, quantity) {
+    if (!canEdit()) return;
+    const p = activePlayer(), item = itemById(itemId);
+    quantity = Math.floor(Number(quantity));
+    if (!p||!item||!Number.isFinite(quantity)||quantity<1||quantity>100) return toast("Choose an item and quantity from 1 to 100.","error");
+    const total = item.price*quantity;
+    if (p.money < total) return toast(`You need ${money(total)} for this order.`,"error");
+    p.money -= total;
+    const order = {id:state.nextOrderId++,playerId:p.id,itemId:item.id,quantity,total,status:"Pending",createdAt:now()};
+    state.orders.push(order); updateQuestProgress(p,"restock",1);
+    logActivity(`${p.name} placed restock order #${order.id}.`);
+    saveState(); renderAll(); toast(`Restock order #${order.id} placed.`);
+  }
+  function fulfillOrder(id) {
+    if (!canEdit()) return;
+    const order = state.orders.find(o=>Number(o.id)===Number(id));
+    if (!order||order.status!=="Pending") return;
+    const p = state.players.find(x=>x.id===order.playerId);
+    if (!p) return toast("The player for this order no longer exists.","error");
+    p.inventory[order.itemId] = (Number(p.inventory[order.itemId])||0)+order.quantity;
+    order.status = "Fulfilled"; order.fulfilledAt=now();
+    logActivity(`Restock order #${order.id} fulfilled for ${p.name}.`);
+    saveState(); renderAll(); toast("Restock order fulfilled and items added to inventory.");
+  }
+
+  function renderQuests() {
+    const p = activePlayer();
+    $("questDate").textContent = new Date().toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"});
+    if (!p) {
+      $("questsList").innerHTML = `<div class="empty-state">Create a player to receive daily quests.</div>`;
+      $("questsCompleted").textContent="0 / 3"; $("questsClaimed").textContent="$0"; return;
+    }
+    ensureDailyQuests(p);
+    const quests = p.dailyQuests.quests;
+    $("questsCompleted").textContent = `${quests.filter(q=>q.claimed).length} / ${quests.length}`;
+    $("questsClaimed").textContent = money(p.dailyQuests.claimedRewards||0);
+    $("questsList").innerHTML = quests.map(q=>{
+      const complete = q.progress>=q.target;
+      const pct = Math.min(100,Math.floor(q.progress/q.target*100));
+      const reward = q.reward*(isActiveEvent("doubleCoins")?2:1);
+      return `<article class="quest-card"><div class="quest-card-top"><div class="quest-icon">${q.emoji}</div><div><h4>${escapeHtml(q.title)}</h4><p>${escapeHtml(q.description)}</p></div></div><div class="quest-reward">🎁 Reward: ${money(reward)}</div><div class="quest-progress"><div class="quest-progress-fill" style="width:${pct}%"></div></div><div class="quest-progress-label"><span>Progress</span><span>${Math.min(q.progress,q.target)} / ${q.target}</span></div>${q.claimed?`<button class="secondary" disabled>✓ Reward Claimed</button>`:complete?`<button class="primary" data-claim-quest="${escapeHtml(q.id)}" ${viewOnlyMode?"disabled":""}>Claim Reward</button>`:`<button class="secondary" disabled>In Progress</button>`}</article>`;
+    }).join("");
+  }
+  function claimQuest(id) {
+    if (!canEdit()) return;
+    const p = activePlayer(); if (!p) return;
+    ensureDailyQuests(p);
+    const q = p.dailyQuests.quests.find(x=>x.id===id);
+    if (!q||q.claimed||q.progress<q.target) return toast("This quest is not ready to claim.","error");
+    const reward = q.reward*(isActiveEvent("doubleCoins")?2:1);
+    q.claimed = true; p.money += reward; p.dailyQuests.claimedRewards = (p.dailyQuests.claimedRewards||0)+reward;
+    logActivity(`${p.name} claimed "${q.title}" for ${money(reward)}.`);
+    saveState(); renderAll(); toast(`Quest reward claimed: ${money(reward)}!`);
+  }
+
+  function timeLeft(end) {
+    const ms = Math.max(0,Number(end)-now());
+    const minutes = Math.ceil(ms/60000);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes/60), mins = minutes%60;
+    if (hours < 24) return `${hours}h ${mins}m`;
+    return `${Math.floor(hours/24)}d ${hours%24}h`;
+  }
+  function renderEvents() {
+    expireEvents();
+    const events = activeEvents();
+    $("eventsList").innerHTML = events.length ? events.map(e=>`<article class="event-card"><div class="event-card-top"><div class="event-icon">${EVENT_INFO[e.type]?.emoji||"✦"}</div><div><h4>${escapeHtml(EVENT_INFO[e.type]?.name||e.type)}</h4><p>${escapeHtml(EVENT_INFO[e.type]?.description||"A timed event is active.")}</p></div></div><div class="event-status">● ACTIVE</div><div class="event-time">Time remaining: ${timeLeft(e.endsAt)}</div></article>`).join("") : `<div class="empty-state"><div class="empty-icon">🎉</div>No active events right now.<br>Check back later or ask the admin to start one.</div>`;
+    $("adminEventStatus").textContent = events.length ? events.map(e=>`${EVENT_INFO[e.type]?.name||e.type}: ${timeLeft(e.endsAt)} left`).join(" · ") : "No active events.";
+    $("dashboardEvents").innerHTML = events.length ? events.map(e=>`<div class="compact-row"><div class="compact-icon">${EVENT_INFO[e.type]?.emoji||"✦"}</div><div><b>${escapeHtml(EVENT_INFO[e.type]?.name||e.type)}</b><small>${timeLeft(e.endsAt)} remaining</small></div></div>`).join("") : `<div class="empty-inline">No active events.</div>`;
+    $("statEvents").textContent = events.length;
+  }
+  function startEvent(type, durationMinutes) {
+    if (!canEdit()) return;
+    if (!EVENT_INFO[type]) return toast("Choose a valid event.","error");
+    durationMinutes = Math.max(1,Number(durationMinutes)||15);
+    state.events = state.events.filter(e=>e.type!==type && e.endsAt>now());
+    state.events.push({id:uid(),type,startedAt:now(),endsAt:now()+durationMinutes*60000});
+    logActivity(`Started ${EVENT_INFO[type].name} for ${durationMinutes} minutes.`);
+    saveState(); renderAll(); toast(`${EVENT_INFO[type].name} started.`);
+  }
+  function endEvents() {
+    if (!canEdit()) return;
+    if (!state.events.length) return toast("There are no active events.","error");
+    state.events=[]; logActivity("Admin ended all active events."); saveState(); renderAll(); toast("All events ended.");
+  }
+    function renderDashboard() {
+    $("dashPlayers").textContent = state.players.length;
+    $("dashMoney").textContent = money(totalMoney());
+    $("dashItems").textContent = totalItems();
+    $("dashOrders").textContent = state.orders.length;
+    $("dashboardPlayerTable").innerHTML = state.players.length ? `<div class="table-wrap"><table><thead><tr><th>Player</th><th>Balance</th><th>Stores</th><th>Items</th><th>Level</th></tr></thead><tbody>${state.players.map(p=>`<tr><td>${escapeHtml(p.name)}</td><td>${money(p.money)}</td><td>${p.stores.length}</td><td>${totalInventory(p)}</td><td>${p.level}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty-inline">No players saved.</div>`;
+    const select = $("dashboardPlayerSelect"), old = select.value;
+    select.innerHTML = state.players.length ? state.players.map(p=>`<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join("") : `<option value="">No players</option>`;
+    if (state.players.some(p=>p.id===old)) select.value=old;
+    renderDashboardInventory();
+  }
+  function renderDashboardInventory() {
+    const p = state.players.find(x=>x.id===$("dashboardPlayerSelect").value);
+    if (!p) { $("dashboardInventory").innerHTML=`<div class="empty-inline">No player selected.</div>`; return; }
+    const rows = CATALOG.filter(item=>(Number(p.inventory[item.id])||0)>0);
+    $("dashboardInventory").innerHTML = rows.length ? `<div class="table-wrap"><table><thead><tr><th>Item</th><th>Category</th><th>Quantity</th><th>Sell value</th></tr></thead><tbody>${rows.map(item=>`<tr><td>${item.emoji} ${escapeHtml(item.name)}</td><td>${escapeHtml(item.category)}</td><td>${p.inventory[item.id]}</td><td>${money(Math.floor(item.price*.5)*(Number(p.inventory[item.id])||0))}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty-inline">This player's inventory is empty.</div>`;
+  }
+
+  function renderAdminForms() {
+    const p=activePlayer();
+    $("adminCustomers").value=p?.customersToday||0;
+    $("adminReputation").value=p?.reputation??50;
+    $("adminLevel").value=p?.level||1;
+  }
+  function adjustMoney(amount, action) {
+    if (!canEdit()) return;
+    const p=activePlayer(); if (!p) return toast("Create a player first.","error");
+    amount=Math.floor(Number(amount));
+    if (!Number.isFinite(amount)||amount<1) return toast("Enter a valid amount.","error");
+    if (action==="remove"&&p.money<amount) return toast("The player doesn't have that much money.","error");
+    p.money += action==="remove" ? -amount : amount;
+    logActivity(`${action==="remove"?"Removed":"Added"} ${money(amount)} ${action==="remove"?"from":"to"} ${p.name}.`);
+    saveState(); renderAll(); toast("Money updated.");
+  }
+  function updateStats(customers,reputation,level) {
+    if (!canEdit()) return;
+    const p=activePlayer(); if (!p) return toast("Create a player first.","error");
+    p.customersToday=Math.max(0,Math.floor(Number(customers)||0));
+    p.reputation=Math.max(0,Math.min(100,Math.floor(Number(reputation)||0)));
+    p.level=Math.max(1,Math.floor(Number(level)||1));
+    logActivity(`Updated statistics for ${p.name}.`); saveState(); renderAll(); toast("Player statistics saved.");
+  }
+
+  function renderAll() {
+    expireEvents();
+    state.players.forEach(ensureDailyQuests);
+    renderHeader(); renderOverview(); renderPlayers(); renderStores(); renderShop(); renderInventory(); renderRestock(); renderQuests(); renderEvents(); renderDashboard(); renderAdminForms();
+  }
+  function exportData() {
+    if (!canEdit()) return;
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download=`store-empire-save-${localDateKey()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    toast("Save exported.");
+  }
+  function importData(file) {
+    if (!canEdit()) return;
+    if (!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try {
+        const parsed=JSON.parse(String(reader.result));
+        if (!parsed||!Array.isArray(parsed.players)) throw new Error("Invalid save file");
+        if (!confirm("Import this save? It will replace the current browser save.")) return;
+        state={...defaultState(),...parsed};
+        state.players=parsed.players.map(normalizePlayer);
+        state.events=Array.isArray(parsed.events)?parsed.events:[];
+        state.orders=Array.isArray(parsed.orders)?parsed.orders:[];
+        state.activity=Array.isArray(parsed.activity)?parsed.activity:[];
+        state.selectedId=state.players.some(p=>p.id===parsed.selectedId)?parsed.selectedId:(state.players[0]?.id||null);
+        state.nextOrderId=Math.max(1,Number(parsed.nextOrderId)||1);
+        state.players.forEach(ensureDailyQuests); saveState(); renderAll(); toast("Save imported successfully.");
+      } catch (error) { toast("That file is not a valid Store Empire save.","error"); }
+      $("importFile").value="";
+    };
+    reader.onerror=()=>toast("Could not read that file.","error");
+    reader.readAsText(file);
+  }
+  function resetGame() {
+    if (!canEdit()) return;
+    if (!confirm("Reset Store Empire? This deletes the saved game in this browser. Export a backup first if needed.")) return;
+    localStorage.removeItem(SAVE_KEY); localStorage.removeItem(OLD_SAVE_KEY);
+    state=defaultState();
+    const p=normalizePlayer({id:uid(),name:"My First Store",money:2500,stores:[{id:uid(),name:"Starter Store",createdAt:now()}],customersToday:100,reputation:50,level:1,inventory:{}});
+    state.players.push(p);state.selectedId=p.id;ensureDailyQuests(p);logActivity("Game reset. Welcome back!");saveState();renderAll();showTab("overview");toast("Game reset.");
+  }
+
+  function initializeControls() {
+    document.querySelectorAll(".nav[data-tab]").forEach(button=>button.addEventListener("click",()=>showTab(button.dataset.tab)));
+    document.querySelectorAll("[data-goto]").forEach(button=>button.addEventListener("click",()=>showTab(button.dataset.goto)));
+    $("activePlayerSelect").addEventListener("change",e=>selectPlayer(e.target.value));
+    $("viewModeButton").addEventListener("click",()=>{
+      viewOnlyMode=!viewOnlyMode;
+      renderAll();
+      toast(viewOnlyMode?"View-only mode enabled. Editing controls are disabled.":"View-only mode disabled.");
+    });
+    $("createPlayerButton").addEventListener("click",()=>{
+      if (!canEdit()) return;
+      $("newPlayerName").value=""; $("startingMoney").value="1000"; $("playerDialog").showModal(); $("newPlayerName").focus();
+    });
+    $("closePlayerDialog").addEventListener("click",()=>$("playerDialog").close());
+    $("cancelPlayerButton").addEventListener("click",()=>$("playerDialog").close());
+    $("newPlayerForm").addEventListener("submit",e=>{e.preventDefault();if(!canEdit())return;const name=$("newPlayerName").value;const cash=$("startingMoney").value;$("playerDialog").close();createPlayer(name,cash);});
+    $("addStoreButton").addEventListener("click",addStore);
+    $("shopSearch").addEventListener("input",renderShop);
+    $("shopCategory").addEventListener("change",renderShop);
+    $("restockForm").addEventListener("submit",e=>{e.preventDefault();placeRestockOrder($("restockItem").value,$("restockQuantity").value);});
+    $("moneyForm").addEventListener("submit",e=>{e.preventDefault();adjustMoney($("moneyAmount").value,$("moneyAction").value);});
+    $("statsForm").addEventListener("submit",e=>{e.preventDefault();updateStats($("adminCustomers").value,$("adminReputation").value,$("adminLevel").value);});
+    $("eventForm").addEventListener("submit",e=>{e.preventDefault();startEvent($("eventType").value,$("eventDuration").value);});
+    $("endEventButton").addEventListener("click",endEvents);
+    $("exportButton").addEventListener("click",exportData);
+    $("importFile").addEventListener("change",e=>importData(e.target.files?.[0]));
+    $("resetButton").addEventListener("click",resetGame);
+    $("dashboardPlayerSelect").addEventListener("change",renderDashboardInventory);
+    document.addEventListener("click",e=>{
+      const target=e.target.closest("button"); if(!target)return;
+      if(target.dataset.selectPlayer) selectPlayer(target.dataset.selectPlayer);
+      if(target.dataset.deletePlayer) removePlayer(target.dataset.deletePlayer);
+      if(target.dataset.buyItem) buyItem(target.dataset.buyItem);
+      if(target.dataset.sellItem) sellItem(target.dataset.sellItem,false);
+      if(target.dataset.sellAll) sellItem(target.dataset.sellAll,true);
+      if(target.dataset.fulfillOrder) fulfillOrder(target.dataset.fulfillOrder);
+      if(target.dataset.claimQuest) claimQuest(target.dataset.claimQuest);
+    });
+  }
+  function initializeCategorySelect() {
+    const categories=[...new Set(CATALOG.map(item=>item.category))].sort();
+    $("shopCategory").innerHTML='<option value="all">All categories</option>'+categories.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  }
+
+  loadState();
+  initializeCategorySelect();
+  initializeControls();
   renderAll();
-  showTab("players");
-  notify("Game data reset.");
-}
-
-renderAll();
+  showTab("overview");
+  window.setInterval(()=>{
+    const before=activeEvents().map(e=>e.id).join(",");
+    expireEvents();
+    const after=activeEvents().map(e=>e.id).join(",");
+    if(before!==after) renderAll();
+    else if(activeEvents().length) { renderEvents(); renderOverview(); renderStores(); }
+  },30000);
+})();
